@@ -3,7 +3,7 @@
 #
 # Ivana Cardoso - ivanawaters@gmail.com
 #
-# Last modification: January 11, 2024
+# Last modification: January 15, 2024
 
 # Set working directory
 setwd("C:/Users/Ivana/OneDrive/PhD_INPA/1.Diversity_question/Analises/birds_diversity_Balbina")
@@ -24,7 +24,9 @@ comm <- subset(comm, comm$status != "Recapture")  # Removing recaptured birds
 comm <- reshape2::dcast(comm, site ~ species, value.var = "species")
 row.names(comm) <- comm$site
 row.names(comm) == row.names(env)
+comm = comm[,2:131]
 
+#### Phylogenetic diversity ####
 # Calculating Faith's PD
 pds <- lapply(trees, function(x) pd(comm, x))  # Calculate the PD for each site using the 1000 trees. For each tree, there are 38 PD and SR values.
 pd <- lapply(pds, function(x) x[, 1])  # Select only PD values
@@ -40,7 +42,7 @@ conf.inter <- list()
 
 for (i in 1:38) {
   t[[i]] <- t.test(pd_df[i, ])
-  conf.inter[[i]] <- lapply(t, function(x) x[["conf.int"]])
+  conf.inter <- lapply(t, function(x) x[["conf.int"]])
 }
 
 conf.inter <- do.call(cbind, conf.inter)
@@ -65,6 +67,8 @@ pd_mode <- lapply(1:38, function(i) {
   hist_info <- hist(pd_df[i, ], breaks = seq(min(pd_df[i, ]), max(pd_df[i, ]), length.out = 11))
   hist_info$mids[which.max(hist_info$counts)]
 })
+pd_mode <- do.call(cbind, pd_mode)
+pd_mode = as.vector(pd_mode)
 
 # Testing if mean and mode PD are correlated
 plot(pd_mode ~ pd_mean)
@@ -147,3 +151,59 @@ plot.pd.sr <- ggpubr::ggscatter(pd_sr, x = "pd", y = "sr",
 
 ggarrange(plot.pd.log, plot.sr.log, ncol = 1, nrow = 2)
 
+# Null model - Matrix-swap model
+swapmodel <- list()
+set.seed(13)
+for (i in 1:999) {
+  swapmodel[[i]] <- picante::randomizeMatrix(t(comm), null.model = "independentswap")
+}
+
+expPDs <- lapply(trees, function(x) ses.pd(comm, x, null.model = "independentswap",
+                                           runs = 999, iterations = 1000,
+                                           include.root = FALSE))
+
+expPD <- lapply(expPDs, function(x) x[, 3])  # Select only expected PD values
+expPD <- do.call(cbind, expPD)
+expPD_mean <- rowMeans(expPD)
+pd_sr$expPD <- expPD_mean
+
+# SESPD = Obs-Exp/SDexp, where Obs = the observed PD, Exp = the mean of the 999 simulated values, and SDexp = the standard deviation of this mean.
+SESPD <- (pd_sr$pd - pd_sr$expPD) / sd(pd_sr$expPD)
+pd_sr$SESPD <- SESPD
+
+mod.sespd <- lm(pd_sr$SESPD ~ log(pd_sr$area))
+summary(mod.sespd)  # p=0.133, adjr=0.06158
+
+# Plotting sesPD x Area, PD X sesPD
+plot.sespd.log <- ggplot(data = pd_sr,
+                         mapping = aes(x = area, y = SESPD)) +
+  labs(x = "Island area (ha)",
+       y = "Mean Standardized Effect Size of PD (sesPD)") +
+  scale_x_log10(limits = c(NA, NA),
+                breaks = c(1, 3, 10, 30, 100, 300, 1000, 16988.40),
+                labels = c("1", "3", "10", "30", "100", "300", "1000", "CF")) +
+  annotation_logticks() +
+  geom_point(data = pd_sr,
+             mapping = aes(x = area, y = SESPD),
+             color = "#000000", fill = "#000000",
+             shape = 21, size = 3) +
+  geom_smooth(data = pd_sr[c(1:7, 13:38), ],
+              mapping = aes(x = area, y = SESPD),
+              method = lm,
+              color = "#000000",
+              fill = "#636363") +
+  annotate(geom = "text", x = 6, y = 0.5,
+           label = "Adj R² = 0.06158, p = 0.133") +
+  theme_pubr(base_size = 20) +
+  theme(axis.ticks = element_line(size = 0.25))
+
+plot.pd.sespd <- ggpubr::ggscatter(pd_sr, x = "pd", y = "SESPD",
+                                   xlab = "Phylogenetic Diversity",
+                                   ylab = "Mean Standardized Effect Size of PD (SESPD)",
+                                   add = "reg.line",
+                                   conf.int = TRUE,
+                                   color = "#000000",
+                                   fill = "#636363",
+                                   shape = 16) +
+  stat_cor(p.accuracy = 0.001) +
+  theme_pubr()
