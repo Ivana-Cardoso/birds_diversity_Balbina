@@ -149,7 +149,7 @@ plot.pd.sr <- ggpubr::ggscatter(pd_sr, x = "pd", y = "sr",
   stat_cor(p.accuracy = 0.001) +
   theme_pubr()
 
-ggarrange(plot.pd.log, plot.sr.log, ncol = 1, nrow = 2)
+ggarrange(plot.sr.log, plot.pd.log, ncol = 2, nrow = 1)
 
 # Null model - Matrix-swap model
 swapmodel <- list()
@@ -175,6 +175,16 @@ mod.sespd <- lm(pd_sr$SESPD ~ log(pd_sr$area))
 summary(mod.sespd)  # p=0.133, adjr=0.06158
 
 # Plotting sesPD x Area, PD X sesPD
+t.test(pd_sr$SESPD)
+
+
+pd_sr$color[which(pd_sr$SESPD > 0.2)] = "blue" #overdispersion
+pd_sr$color[which((pd_sr$SESPD > -0.2) & (pd_sr$SESPD < 0.2))] = "black" #null model
+pd_sr$color[which(pd_sr$SESPD < -0.2)] = "red" #clustering
+pd_sr$color = as.factor(pd_sr$color)
+                      
+                      
+                      
 plot.sespd.log <- ggplot(data = pd_sr,
                          mapping = aes(x = area, y = SESPD)) +
   labs(x = "Island area (ha)",
@@ -185,7 +195,7 @@ plot.sespd.log <- ggplot(data = pd_sr,
   annotation_logticks() +
   geom_point(data = pd_sr,
              mapping = aes(x = area, y = SESPD),
-             color = "#000000", fill = "#000000",
+             color = "#000000", fill = pd_sr$color,
              shape = 21, size = 3) +
   geom_smooth(data = pd_sr[c(1:7, 13:38), ],
               mapping = aes(x = area, y = SESPD),
@@ -207,3 +217,18 @@ plot.pd.sespd <- ggpubr::ggscatter(pd_sr, x = "pd", y = "SESPD",
                                    shape = 16) +
   stat_cor(p.accuracy = 0.001) +
   theme_pubr()
+
+plot.sr.sespd <- ggpubr::ggscatter(pd_sr, x = "sr", y = "SESPD",
+                                   xlab = "Species richness",
+                                   ylab = "Mean Standardized Effect Size of PD (SESPD)",
+                                   add = "reg.line",
+                                   conf.int = TRUE,
+                                   color = "#000000",
+                                   fill = "#636363",
+                                   shape = 16) +
+  stat_cor(p.accuracy = 0.001) +
+  theme_pubr()
+
+plot(sort(pd_sr$SESPD))
+
+write.csv(pd_sr, "pd_sr.csv")
