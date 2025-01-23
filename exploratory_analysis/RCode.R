@@ -5,7 +5,7 @@
 #
 # Ivana Cardoso - ivanawaters@gmail.com
 #
-# Last modification: January 21, 2025
+# Last modification: January 23, 2025
 
 rm(list = ls())
 
@@ -47,4 +47,22 @@ coverage_plot <-
   theme_minimal() +
   theme(legend.position = "none")
 
+# Plot the distribution of collected continuous traits to check for outliers
+hist(traits$Peso_real)
+hist(traits$CT)
+hist(traits$Asa)
+hist(traits$Remiges_primarias)
+hist(traits$Remiges_secundarias)
+hist(traits$Cauda)
+hist(traits$Bico_comprimento)
+hist(traits$Bico_largura)
+hist(traits$Bico_altura)
+hist(traits$Tarso_comprimento)
+hist(traits$Tarso_largura)
 
+# Plot categorical traits to check the balance of levels
+barplot(table(traits$Habitat), xlab = "Type of Habitat")
+barplot(table(traits$Trophic.Niche), xlab = "Trophic Niche")
+# The majority of species are forest invertivores
+
+ 
