@@ -3,12 +3,13 @@
 #
 # Ivana Cardoso - ivanawaters@gmail.com
 #
-# Last modification: January 15, 2024
+# Last modification: January 24, 2025
 
-# Set working directory
-setwd("C:/Users/Ivana/OneDrive/PhD_INPA/1.Diversity_question/Analises/birds_diversity_Balbina")
+# Clean environment
+rm(list = ls()) # Clear all objects in memory
+gc() # Garbage collection to free memory
 
-# Load packages
+# Load necessary packages
 library(ape)
 library(reshape2)
 library(picante)

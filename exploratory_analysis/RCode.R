@@ -1,7 +1,7 @@
-# EXPLORATORY ANALYSIS
-#
 # Diversity and structuring process
 # of understory bird assemblages in Balbina
+#
+# EXPLORATORY ANALYSES
 #
 # Ivana Cardoso - ivanawaters@gmail.com
 #
