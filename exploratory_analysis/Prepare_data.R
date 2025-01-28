@@ -4,7 +4,7 @@
 # Ivana Cardoso
 # ivanawaters@gmail.com
 #
-# Last modified: January 24, 2025
+# Last modified: January 28, 2025
 
 # Clean environment
 rm(list = ls()) # Clear all objects in memory
@@ -18,6 +18,8 @@ library(terra)
 library(landscapemetrics)
 library(sf)
 
+#### USING 2023 AND 2024 DATA
+####
 #### STEP 1 - ORGANIZE COMMUNITY AND TRAIT DATA ####
 # Set working directory and importing data
 setwd("C:/Users/ivana/OneDrive/PhD_INPA/Dados_Balbina")
@@ -34,17 +36,20 @@ colnames(avonet)[2] = "Especie"
 data$Ocorrencia = 1
 data_subset <- subset(data, Status != "Recaptura")
 
+# Removing data from Continuous Forest sites, because they will not be used in this study
+data_subset <- subset(data_subset, !(Sitio %in% c("CF_Grid_NS2", "CF_Grid_NS3", "CF_Loreno", "CF_Tucumari", "CF_Waba")))
+
 # Creating a community data matrix
-comm = as.data.frame(tapply(data_subset$Ocorrencia,
+comm_islands = as.data.frame(tapply(data_subset$Ocorrencia,
                             list(data_subset$Sitio, data_subset$Especie),
                             FUN = sum))
-comm[is.na(comm)] = 0
+comm_islands[is.na(comm_islands)] = 0
 
 # Creating a trait data matrix
-comm_t = as.data.frame(t(comm))
+comm_t = as.data.frame(t(comm_islands))
 comm_t$Especie = row.names(comm_t)
 row.names(comm_t) = NULL
-comm_2 = comm_t[,c(38, 1:37)]
+comm_2 = comm_t[,c(33, 1:32)]
 
 # Renaming birds following BirdLife 2016 nomenclature
 comm_2$Especie[comm_2$Especie == "Chrysuronia_versicolor"] = "Amazilia_versicolor"
@@ -54,7 +59,7 @@ comm_2$Especie[comm_2$Especie == "Tamatia_tamatia"] = "Nystactes_tamatia"
 comm_2$Especie[comm_2$Especie == "Thraupis_episcopus"] = "Tangara_episcopus"
 
 traits = inner_join(comm_2, avonet, by = "Especie")
-traits = traits[,-c(2:39)]
+traits = traits[,-c(2:34)]
 
 comm_2$Especie == traits$Especie
 
@@ -73,8 +78,8 @@ mean_traits = collected_traits[, lapply(.SD, mean, na.rm = T), by = Especie]
 traits = merge(traits, mean_traits, by = "Especie")
 traits = traits[,-c(6:11, 23:27,29:30,33:38)]
 
-setwd("C:/Users/ivana/OneDrive/PhD_INPA/Dados_Balbina")
-write.csv(comm, file = "balbina_comm.csv", row.names = TRUE)
+setwd("C:/Users/ivana/OneDrive/PhD_INPA/1.Diversity_question/Data")
+write.csv(comm_islands, file = "balbina_comm_islands.csv", row.names = TRUE)
 write.csv(traits, file = "balbina_understory_bird_traits.csv", row.names = TRUE)
 
 
@@ -145,3 +150,33 @@ colnames(sites)[4] <- "area_2022"
 setwd("C:/Users/ivana/OneDrive/PhD_INPA/1.Diversity_question/Data")
 write.csv(sites, "balbina_environmental_variables_2023_2024.csv")
 
+
+
+
+
+
+#### USING 2015-2016 DATA
+####
+#### STEP 1 - ORGANIZE COMMUNITY AND TRAIT DATA ####
+# Set working directory and importing data
+setwd("C:/Users/ivana/OneDrive/PhD_INPA/Dados_Balbina/Dados_Anderson")
+data = read.csv("balbina_understory_birds_captures.csv")
+
+# Removing blank spaces
+data$species = gsub(" ", "_", data$species)
+
+# Removing recaptured birds
+data$ocorrencia = 1
+data_subset <- subset(data, status != "Recapture")
+
+# Removing data from Continuous Forest sites, because they will not be used in this study
+data_subset <- subset(data_subset, !(site %in% c("CF_Grid_NS2", "CF_Grid_NS3", "CF_Loreno", "CF_Tucumari", "CF_Waba")))
+
+# Creating a community data matrix
+comm_islands = as.data.frame(tapply(data_subset$ocorrencia,
+                                    list(data_subset$site, data_subset$species),
+                                    FUN = sum))
+comm_islands[is.na(comm_islands)] = 0
+
+setwd("C:/Users/ivana/OneDrive/PhD_INPA/1.Diversity_question/Data")
+write.csv(comm_islands, "balbina_comm_islands_2015-16.csv")
