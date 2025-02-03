@@ -547,18 +547,45 @@ ggpubr::ggarrange(SR_plot, NULL, NULL,
 
 
 
-#### PHYLOGENETIC DIVERSITY - Null models ####
+#### PHYLOGENETIC DIVERSITY - Regional null model ####
+# 
+# I will use the Regional null model as proposed by Elliot Miller et al at 
+# http://onlinelibrary.wiley.com/doi/10.1111/ecog.02070/abstract
+#
+# The regional null model simulates neutral dispersal of individuals into plots 
+# by sampling from a regional pool that is unaffected by local dynamics
+#
+# To install the metricTester package, which is no longer available on CRAN, 
+# I had to download the spacodiR package, which is also not on CRAN. 
+# Additionally, I had to use an older version of geiger that includes the 
+# rescale function, which metricTester calls during installation.
+#
+# More information about the functions and arguments can be found in:
+# http://cran.nexr.com/web/packages/metricTester/metricTester.pdf
+# http://www.ecography.org/sites/ecography.org/files/appendix/ecog-02070.pdf
 
+library(devtools)
+install_github("gdauby/spacodiR")
+library(spacodiR)
 
+remotes::install_version("geiger", version = "2.0.10")  # Replace with the version that has rescale function
 
+install_github("eliotmiller/metricTester", dependencies = TRUE)
+library(metricTester)
 
+# Calculate regional null model
+abundance_vector = metricTester::abundanceVector(comm)
 
-# Null model - Matrix-swap model
-swapmodel <- list()
+null_model = list()
 set.seed(13)
+
 for (i in 1:999) {
-  swapmodel[[i]] <- picante::randomizeMatrix(t(comm), null.model = "independentswap")
-}
+  null_model[[i]] <- metricTester::oldRegionalNull(picante.cdm = comm,
+                                                   tree = trees[[i]],
+                                                   regional.abundance = abundance_vector)}
+
+
+
 
 expPDs <- lapply(trees, function(x) ses.pd(comm, x, null.model = "independentswap",
                                            runs = 999, iterations = 1000,
